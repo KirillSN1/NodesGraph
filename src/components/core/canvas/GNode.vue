@@ -4,11 +4,16 @@
 		<div class="gnode-title">{{ node.title }}</div>
 		<div class="gnode-properties">
 			<div :class="PROPERTY_CLASS" v-for="prop, index in node.properties" :key="index">
-				<component v-for="prop, index in node.properties" :key="index" 
-					:is="prop.component" 
-					:property="prop">
+				<component :is="prop.component" :property="prop">
 					<template #socket="{ socket }">
-						<div ref="sockets" class="socket" :style="{ '--socket-color':socket.color }"></div>
+						<GSocket v-if="prop instanceof PropertyWithSocket && socket"
+							ref="sockets" 
+							:socket="socket" 
+							@start-link="emit('start-link',prop, $event)"
+							@move-link="emit('move-link',prop, $event)"
+							@end-link="emit('end-link',prop)"
+							@link="emit('link', prop)">
+						</GSocket>
 						<!-- компонент сокета + (добавлять z-index на клик) -->
 					</template>
 				</component>
@@ -17,15 +22,18 @@
 	</div>
 </template>
 <script lang="ts" setup>
-import { Ref, computed, inject, onMounted, onUnmounted, ref } from 'vue';
+import { computed, inject, onMounted, onUnmounted, ref } from 'vue';
 import GraphNode from '../node/gnode/GraphNode';
 import Position from '../transform/Position';
-import Vector2 from '../vector/Vector2';
 import Transform from '../transform/Transform';
 import Rect from '../transform/Rect';
-import { GNodeTransformChange, SocketTransformChange } from './GNodeTypes';
-import { PropertyWithSocket } from '../node/gnode/GraphProperty';
+import { GNodeTransformChange, GRefCreate, GRefChange, SocketTransformChangeEvent } from './types/GNodeTypes';
+import GraphProperty from '../node/gnode/GraphProperty';
 import { cleanMap } from '../Array';
+import GSocket from "./GSocket.vue";
+import { useGrabbing } from '../GraphComposables';
+import CanvasStateKey from './types/CanvasStateKey';
+import { PropertyWithSocket } from '../node/gnode/PropertyWithSocket';
 
 const PROPERTY_CLASS = "gnode-property";
 const elRef = ref<Element>();
@@ -33,9 +41,12 @@ const el = ()=>{
 	if(!elRef.value) throw new Error("Can not find el");
 	return elRef.value;
 }
-const sockets = ref<Element[]>([]);
-const canvas = inject("canvas") as Ref<HTMLCanvasElement>;
-if(!canvas) throw Error("Canvas is not provied!");
+const sockets = ref<InstanceType<typeof GSocket>[]>([]);
+const canvasState = inject(CanvasStateKey);
+const getCanvasState = ()=>{
+	if(!canvasState) throw new Error("canvasState is not provided!");
+	return canvasState;
+}
 const props = defineProps<{
 	node:GraphNode
 	transform?:Transform
@@ -50,8 +61,17 @@ const styles = computed(()=>{
 const emit = defineEmits<{
 	move:[GNodeTransformChange],
 	resize:[GNodeTransformChange],
+	'start-link':[GraphProperty, GRefCreate],
+	'move-link':[GraphProperty, GRefChange],
+	'end-link':[GraphProperty]
+	'link':[GraphProperty]
 }>();
 let resizeObserver:ResizeObserver;
+const { onMousedown, onMousemove, onMouseup, grabbing } = useGrabbing({
+	elementPosition:()=>props.node.transform.position,
+	ignoreChildCallback:el=>(el as Element).classList?.contains(PROPERTY_CLASS),
+	onMousemove({newPosition}){ emit("move", getTransformChangeOf({ position:newPosition })); }
+});
 onMounted(()=>{
 	resizeObserver = watchRect(el());
 	window.addEventListener("mousemove",onMousemove);
@@ -62,9 +82,6 @@ onUnmounted(()=>{
 	window.removeEventListener("mousemove",onMousemove);
 	window.removeEventListener("mouseup",onMouseup);
 });
-let lastPosition:Position | null;
-let mousedownPosition:Vector2 | null;
-const grabbing = computed(()=>Boolean(lastPosition  && mousedownPosition))
 function watchRect(element:Element){
 	const observer = new ResizeObserver(([entry])=>{
 		const newRect = new Rect({ width:entry.contentRect.width, height:entry.contentRect.height })
@@ -72,22 +89,6 @@ function watchRect(element:Element){
 	});
 	observer.observe(element,{ box:"border-box" });
 	return observer;
-}
-function onMousedown(event:MouseEvent){
-	if((event.composedPath().findIndex((el)=>(el as Element).classList?.contains(PROPERTY_CLASS))>=0)) return;
-	lastPosition = props.node.transform.position.copyWith();
-	mousedownPosition = new Vector2({ x:event.clientX, y:event.clientY });
-}
-function onMousemove(event:MouseEvent){
-	if(!lastPosition || !mousedownPosition) return;
-	const cursorPosition = new Vector2({ x:event.clientX, y:event.clientY });
-	const newPosition = lastPosition.add(cursorPosition, mousedownPosition.negative());
-	emit("move", getTransformChangeOf({ position:newPosition }));
-}
-function onMouseup(event:MouseEvent){
-	onMousemove(event);
-	lastPosition = null;
-	mousedownPosition = null;
 }
 function getTransformChangeOf(data?:{
 	rect?:Rect,
@@ -98,10 +99,17 @@ function getTransformChangeOf(data?:{
 			position:data?.position,
 			rect:data?.rect
 		}),
-		socketTransforms: getActualSocketTransformsWith({
+		socketTransforms: mapToSocketTransformChange(getActualSocketTransformsWith({
 			position:data?.position,
 			rect:data?.rect
-		})
+		}))
+	})
+}
+function mapToSocketTransformChange(transforms:Transform[]){
+	return cleanMap(transforms,(transform, index)=>{
+		const property = props.node.properties[index];
+		if(!(property instanceof PropertyWithSocket)) return undefined;
+		return new SocketTransformChangeEvent(property,{ transform });
 	})
 }
 function getActualNodeTransformWith(data?:{
@@ -124,25 +132,32 @@ function getActualSocketTransformsWith(data?:{
 	rect?:Rect,
 	position?:Position
 }){
-	const canvasPosition = getCanvasPosition();
+	const canvasPosition = getCanvasState().getCanvasPosition();
 	const actualTransform = getActualNodeTransformWith(data);
-	return cleanMap(sockets.value,(element,index)=>{
-		const property = props.node.properties[index];
-		if(!(property instanceof PropertyWithSocket)) return undefined;
-		const socketHtmlRect = element.getBoundingClientRect();
-		const position = new Position({	x:socketHtmlRect.x,	y:socketHtmlRect.y });
-		const rect = new Rect({	width:socketHtmlRect.width,	height:socketHtmlRect.height });
-		return new SocketTransformChange(property,{
-			transform:new Transform({
-				position:position.add(canvasPosition.negative()),
-				rect:data?.rect == undefined?rect:rect.add(actualTransform.rect,data.rect.negative())
-			})
-		});
+	return sockets.value.map((socketComponent)=>{
+		return getActualSocketTransformWith(socketComponent,{
+			actualNodeTransform:actualTransform,
+			canvasPosition,
+			position:data?.position,
+			rect:data?.rect
+		})
 	});
 }
-function getCanvasPosition(){
-	const canvasHtmlRect = canvas.value.getBoundingClientRect();
-	return new Position({ x:canvasHtmlRect.x, y:canvasHtmlRect.y });
+function getActualSocketTransformWith(socket:InstanceType<typeof GSocket>,data?:{
+	canvasPosition?:Position,
+	actualNodeTransform?:Transform
+	rect?:Rect,
+	position?:Position
+}){
+	const canvasPosition = data?.canvasPosition ?? getCanvasState().getCanvasPosition();
+	const actualNodeTransform = data?.actualNodeTransform ?? getActualNodeTransformWith(data);
+	const socketHtmlRect = socket.getRect();
+	const position = new Position({	x:socketHtmlRect.x,	y:socketHtmlRect.y });
+	const rect = new Rect({	width:socketHtmlRect.width,	height:socketHtmlRect.height });
+	return new Transform({
+		position:position.add(canvasPosition.negative()),
+		rect:data?.rect == undefined?rect:rect.add(actualNodeTransform.rect,data.rect.negative())
+	})
 }
 </script>
 <style scoped lang="scss">
@@ -182,13 +197,6 @@ function getCanvasPosition(){
 			background: #4b4b4b;
 			padding: 4px;
 			color: white;
-			.socket{
-				position: absolute;
-				top: 50%;
-				left: 0%;
-				transform: translate(-50%,-50%);
-				background: var(--socket-color);
-			}
 		}
 	}
 	&:not(.grabbing){
@@ -201,12 +209,5 @@ function getCanvasPosition(){
 	&:not(:focus){
 		user-select: none;
 	}
-	.socket{
-		width: 5px;
-		height: 5px;
-		border-radius: 5px;
-		background: #00000057;
-		box-shadow: 0px 0px 2px 0px black;
-	}
 }
-</style>
+</style>./types/CanvasStateKey./types/GNodeTypes

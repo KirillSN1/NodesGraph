@@ -1,50 +1,54 @@
 <template>
-  <div class="gcanvas">
-    <canvas ref="canvas"></canvas>
-    <div ref="nodesCanvas" class="nodes-canvas">
-      <GNode v-for="node, index in nodes" :node="node" :canvas="canvas" :key="index"
-        @move="emit('node-move',$event)"
-        @resize="emit('node-resize',$event)">
-        <!-- <template #property="{ component, property }">
-          <component :is="component" :property="property">
-            <template #socket>
-              <div class="socket"></div>
-            </template>
-          </component>
-        </template> -->
-      </GNode>
+  <VScrim @move="driver.onScrimMove">
+    <div class="gcanvas">
+      <canvas ref="canvas"></canvas>
+      <div ref="nodesCanvas" class="nodes-canvas">
+        <GNode v-for="node, index in driver.nodes" :node="node" :canvas="canvas" :key="index"
+          @move="driver.onNodeMove"
+          @resize="driver.onNodeResize"
+          @start-link="driver.onStartLink"
+          @move-link="driver.onMoveLink"
+          @end-link="driver.onEndLink"
+          @link="driver.onLink">
+        </GNode>
+      </div>
     </div>
-  </div>
+  </VScrim>
 </template>
 <script setup lang="ts">
 import { onMounted, onUnmounted, provide, ref, watch } from 'vue';
-import { GraphDrawer } from './GraphDrawer';
-import GraphNode from '../node/gnode/GraphNode';
 import GNode from './GNode.vue';
-import { GNodeTransformChange } from './GNodeTypes';
-
-const emit = defineEmits<{
-	'node-move':[GNodeTransformChange],
-	'node-resize':[GNodeTransformChange]
-}>();
+import VScrim from './VScrim.vue';
+import Position from '../transform/Position';
+import CanvasStateKey from './types/CanvasStateKey';
+import GraphDriver from './types/CanvasDriver';
 
 const canvas = ref<HTMLCanvasElement>();
-provide("canvas",canvas);
-const nodesCanvas = ref<HTMLDivElement>();
-const props = defineProps<{ nodes:GraphNode[] }>();
-const drawer = new GraphDrawer();
-onMounted(()=>{
-  if(!canvas.value) throw new Error("Can not find canvas ref");
-  drawer.attach(canvas.value);
-  drawer.onRedraw = ()=>{
-    props.nodes.forEach((node)=>drawer.drawTreeLinks(node));
+provide(CanvasStateKey,{
+  canvas,
+  getCanvasPosition(){
+    if(!canvas.value) throw Error(`Canvas is ${canvas.value}`);
+    const canvasHtmlRect = canvas.value.getBoundingClientRect();
+    return new Position({ x:canvasHtmlRect.x, y:canvasHtmlRect.y });
   }
 });
-onUnmounted(()=>{
-  drawer.onRedraw = undefined;
-  drawer.detach();
-})
-watch(()=>props.nodes,()=>drawer.redraw(),{ deep:true });
+const nodesCanvas = ref<HTMLDivElement>();
+const props = withDefaults(defineProps<{
+  driver?:GraphDriver,
+}>(),{
+  driver: ()=>new GraphDriver(),
+});
+watch(()=>props.driver, setDriver);
+onMounted(attachCanvas);
+onUnmounted(()=>props.driver.detach());
+function setDriver(driver:GraphDriver, oldDriver?:GraphDriver){
+  oldDriver?.detach();
+  attachCanvas();
+}
+function attachCanvas(){
+  if(!canvas.value) throw new Error("Can not find canvas ref");
+  props.driver.attach(canvas.value);
+}
 </script>
 <style lang="scss" scoped>
 .gcanvas{
@@ -69,4 +73,4 @@ watch(()=>props.nodes,()=>drawer.redraw(),{ deep:true });
     left: 0;
   }
 }
-</style>./GraphDrawer
+</style>./GraphDrawer./types/CanvasStateKey./types/GNodeTypes./types/GraphDrawer

@@ -23,4 +23,3 @@ export default class Vector2{
         return new Vector2({ x:-this.x, y:-this.y });
     }
 }
-console.log(Vector2);
