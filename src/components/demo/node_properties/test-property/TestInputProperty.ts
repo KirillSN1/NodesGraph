@@ -1,16 +1,10 @@
 import { markRaw } from "vue";
-import { InputSocket, InputSocketStyle } from "@/components/core/node/gnode/GraphSocket";
 import TestInputPropertyVue from "./TestInputProperty.vue";
 import { InputProperty } from "@/components/core/node/gnode/PropertyWithSocket";
+import { GraphSocket } from "@/components/core/node/gnode/GraphSocket";
 
-export class DefaultInputSocketStyle extends InputSocketStyle{
-    readonly color = "red";
-}
-export class DefaultInputSocket extends InputSocket{
-    readonly style: DefaultInputSocketStyle = new DefaultInputSocketStyle();
-}
 export default class TestInputProperty extends InputProperty{
-    public socket: DefaultInputSocket = new DefaultInputSocket();
+    public socket = GraphSocket.input({ color:"red" });
     readonly component = markRaw(TestInputPropertyVue);
     public text:string;
     public placeholder:string;

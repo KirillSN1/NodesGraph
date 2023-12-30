@@ -5,10 +5,24 @@ import GraphRef from "./GraphRef";
 export abstract class GraphSocketStyle{
     readonly abstract color:string;
 }
-export abstract class GraphSocket extends VirtualNode{
-    readonly abstract style:GraphSocketStyle;
+export class GraphSocket extends VirtualNode{
+    readonly type:SocketType;
+    readonly style:GraphSocketStyle;
     private _refs:GraphRef[] = [];
     get refs():GraphRef[] { return [...this._refs] }
+
+    constructor({ style = new DefaultSocketStyle(), type }: { style:GraphSocketStyle, type:SocketType }){
+        super();
+        this.style = style;
+        this.type = type;
+    }
+    static input(style:GraphSocketStyle = new DefaultSocketStyle()){
+        return new GraphSocket({ type:SocketType.InputSocket, style });
+    }
+    static output(style:GraphSocketStyle = new DefaultSocketStyle()){
+        return new GraphSocket({ type:SocketType.OutputSocket, style });
+    }
+
     /**
      * Adds ref to refs list. Calls {@link PropertyWithSocket.linkTo} to link ref 
      * @param ref Ref, that must have one property with this socket.
@@ -28,11 +42,24 @@ export abstract class GraphSocket extends VirtualNode{
         return this._refs.find(r=>r.match(ref)) != null
     }
 }
-export abstract class InputSocketStyle extends GraphSocketStyle{}
-export abstract class OutputSocketStyle extends GraphSocketStyle{}
-export abstract class OutputSocket extends GraphSocket{
-    readonly abstract style: OutputSocketStyle;
+export class DefaultSocketStyle extends GraphSocketStyle{
+    color = "black";
 }
-export abstract class InputSocket extends GraphSocket{
-    readonly abstract style: InputSocketStyle;
+export enum SocketType{
+    InputSocket = "InputSocket",
+    OutputSocket = "OutputSocket",
 }
+// export class OutputSocket extends GraphSocket{
+//     readonly style: GraphSocketStyle;
+//     constructor(data:{ style:GraphSocketStyle } = { style:new DefaultSocketStyle()}){
+//         super();
+//         this.style = data.style;
+//     }
+// }
+// export class InputSocket extends GraphSocket{
+//     readonly style: GraphSocketStyle;
+//     constructor(data:{ style:GraphSocketStyle } = { style:new DefaultSocketStyle()}){
+//         super();
+//         this.style = data.style;
+//     }
+// }

@@ -1,7 +1,7 @@
 <template>
     <div ref="el"
         class="socket" 
-        :class="{ input:socket instanceof InputSocket, output:socket instanceof OutputSocket }"
+        :class="socket.type"
         :style="{ '--socket-color':socket.style.color }"
         @mousedown.left="grabbing.onMousedown"
         @mouseenter="onMouseenter"
@@ -11,7 +11,7 @@
 </template>
 <script setup lang="ts">
 import { inject, onMounted, onUnmounted, ref } from 'vue';
-import { GraphSocket, InputSocket, OutputSocket } from '../node/gnode/GraphSocket';
+import { GraphSocket } from '../node/gnode/GraphSocket';
 import { useGrabbing } from '../GraphComposables';
 import { GRefChange, GRefCreate } from './types/GNodeTypes';
 import CanvasStateKey from './types/CanvasStateKey';
@@ -95,10 +95,10 @@ defineExpose({
     transform: translate(-50%,-50%);
     transition: 0.15s cubic-bezier(0.075, 0.82, 0.165, 1);
     transition-property: scale, --socket-width;
-    &.input{
+    &.InputSocket{
         left: 0%;
     }
-    &.output{
+    &.OutputSocket{
         left: 100%;
     }
     &.input,&.output{
