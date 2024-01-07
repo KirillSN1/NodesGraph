@@ -1,0 +1,1 @@
+export type EventsMap = { [key:string]:Event | undefined };

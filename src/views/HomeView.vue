@@ -1,9 +1,9 @@
 <template>
   <div class="home">
-    <GraphDemo />
+    <GraphSpace/>
   </div>
 </template>
 
 <script setup lang="ts">
-import GraphDemo from '@/components/demo/GraphDemo.vue'
+import GraphSpace from '@/core/components/GraphSpace.vue';
 </script>
