@@ -43,9 +43,9 @@ export default class GraphDriver {
         this._drawer.attach(canvas);
         this._drawer.onRedraw = ()=>{
             this.onStateChange();
-            this._nodes.forEach((node)=>this._drawer.drawTreeLinks(node));
+            this._nodes.forEach(node=>this._drawer.drawTreeLinks(node));
             if(this._linkPropertyBuffer)
-                this._drawer.drawLine(this._linkPropertyBuffer.property.socket.transform.getCenter(), this._linkPropertyBuffer.target);
+                this._drawer.drawLink(this._linkPropertyBuffer.property, this._linkPropertyBuffer.target);
         }
         if(this._nodes) this._drawer.redraw();
     }

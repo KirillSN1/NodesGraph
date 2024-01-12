@@ -22,12 +22,21 @@ export class GraphSocket extends VirtualNode{
     static output(style:GraphSocketStyle = new DefaultSocketStyle()){
         return new GraphSocket({ type:SocketType.OutputSocket, style });
     }
-
+    /**
+     * @returns true if socket can adds one more ref
+     */
+    canAttach(){
+        return this.type != SocketType.InputSocket || !this._refs.length;
+    }
     /**
      * Adds {@link ref} to refs list.
      * @param ref Ref, that must have one property with this socket.
+     * @throws {SocketRefsLimitError} if refs count limit exceed. 
+     * (for {@link SocketType.InputSocket} this limit is 1). See {@link canAttach}
      */
     attach(ref: GraphRef):void {
+        if(this.type == SocketType.InputSocket && this._refs.length) 
+            throw new SocketRefsLimitError(this.type)
         this.assertRef(ref);
         const tryAttachRefTo = (socket:GraphSocket, ref:GraphRef)=>{
             if(!socket.isRef(ref))
@@ -75,6 +84,11 @@ export class DefaultSocketStyle extends GraphSocketStyle{
 export enum SocketType{
     InputSocket = "InputSocket",
     OutputSocket = "OutputSocket",
+}
+export default class SocketRefsLimitError extends Error{
+    constructor(type:SocketType, limit = 1){
+        super(`This ${type} has refs limit - ${limit}`);
+    }
 }
 // export class OutputSocket extends GraphSocket{
 //     readonly style: GraphSocketStyle;

@@ -1,3 +1,4 @@
+import { PropertyWithSocket } from "@/core/node";
 import GraphNode from "../../node/gnode/GraphNode";
 import GraphRef from "../../node/gnode/GraphRef";
 // import { InputProperty, OutputProperty, PropertyWithSocket } from "../../node/gnode/PropertyWithSocket";
@@ -27,40 +28,37 @@ export class GraphDrawer{
     drawTreeLinks(root:GraphNode):void{
         for(const propertie of root.outputProperties){
             for(const ref of propertie.socket.refs){
-                this.drawLink(ref);
+                this.drawRef(ref);
             }
         }
     }
-    drawLink(ref:GraphRef):void{
-        const fromTransform = ref.from.socket.transform;
-        const toTransform = ref.to
-            ?ref.to.socket.transform
-            :new Transform({ position:ref?.target });
-            
-        // const start = new Vector2({
-        //     x:fromTransform.position.x+fromTransform.rect.width/2+this.offset.x,
-        //     y:fromTransform.position.y+fromTransform.rect.height/2+this.offset.y
-        // })
-        // const end = new Vector2({
-        //     x:toTransform.position.x+toTransform.rect.width/2+this.offset.x,
-        //     y:toTransform.position.y+toTransform.rect.height/2+this.offset.y
-        // })
-        const start = fromTransform.getCenter().add(this.offset);
-        const end = toTransform.getCenter().add(this.offset);
-        this.drawLine(start,end);
+    drawRef(ref:GraphRef):void{
+        this.drawLink(ref.from,ref.to);
     }
-    drawLine(start:Vector2,end:Vector2){
+    drawLink(startProperty:PropertyWithSocket | Vector2,endProperty:PropertyWithSocket | Vector2){
+        const getPosition = (prop:PropertyWithSocket | Vector2)=>prop instanceof PropertyWithSocket?
+            prop.socket.transform.getCenter().add(this.offset):
+            prop;
+        const getPropertiyColor = (prop:PropertyWithSocket | Vector2)=>prop instanceof PropertyWithSocket?
+            prop.socket.style.color:"gray"
+        const start = getPosition(startProperty);
+        const end = getPosition(endProperty);
         this.draw((context)=>{
+            context.beginPath();
             context.moveTo(start.x,start.y);
-            context.lineTo(end.x, end.y);
-            // const gradient = context.createLinearGradient(start.x,start.y,end.x, end.y);
-            // gradient.addColorStop(0,property.socket.style.color);
-            // gradient.addColorStop(1,ref.to?ref.to.socket.style.color:"white");
-            context.strokeStyle = "gray";
+            // context.lineTo(end.x, end.y);
+            const xc = (start.x + end.x) / 2;
+            const yc = (start.y + end.y) / 2;
+            context.quadraticCurveTo((start.x+xc)/2, start.y, xc, yc);
+            context.quadraticCurveTo((end.x+xc)/2, end.y, end.x, end.y);
+            // context.quadraticCurveTo(end.y, yc , xc, yc);
+            const gradient = context.createLinearGradient(start.x,start.y,end.x, end.y);
+            gradient.addColorStop(0, getPropertiyColor(startProperty));
+            gradient.addColorStop(1, getPropertiyColor(endProperty));
+            context.strokeStyle = gradient;
             context.lineWidth = 2;
             context.lineCap = "round";
             context.stroke();
-            context.closePath();
         })
     }
     public redraw(){
@@ -74,6 +72,6 @@ export class GraphDrawer{
     private draw(callback:(context:CanvasRenderingContext2D)=>void){
         if(!this.context) throw new Error("You must set canvas before.");
         callback(this.context);
-        this.context.save();
+        // this.context.save();
     }
 }

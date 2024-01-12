@@ -7,16 +7,17 @@
                 :style="{top:top+'px', left:left+'px'}"
                 @contextmenu.prevent>
                 <div class="title" v-if="innerTitle">{{innerTitle}}</div>
-                <div ref="buttonsParent" class="context-actions">
-                    <button v-for="{id, action},index in groupActions" :key="id"
-                        @mouseenter="focusAction(index);"
-                        @focus="onFocus(index)"
-                        @click.stop.left="onClickAction(action,$event)">
-                        <div class="content">
-                            {{ action.title }}
-                            <span v-if="action.group" class="arrow"></span>
-                        </div>
-                    </button>
+                <div ref="controlsParent" class="context-actions">
+                    <div class="button" v-for="{id, action},index in groupActions" :key="id"
+                            @mouseenter="focus(index);"
+                            @click.stop.left="onClickAction(action,$event)">
+                        <button @focus="onFocus(index)">
+                            <div class="content">
+                                {{ action.title }}
+                                <span v-if="action.group" class="arrow"></span>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </Teleport>
@@ -28,6 +29,7 @@ import ContextAction from './ContextAction';
 import { mouseOutside } from '../../helpers/MouseOutside';
 import useMousePosition from "../mouse-scope/useMousePosition";
 import { attributePrefix, elementProperty } from "./constants";
+import { useTabNavigation } from "../TabNavigator/TabNavigation";
 //Props
 const props = withDefaults(defineProps<{
     title:string,
@@ -47,21 +49,14 @@ const emit = defineEmits<{
 //Elements Refs
 const el = ref<Element>();
 const popup = ref<Element>();
-const buttonsParent = ref<HTMLDivElement>();
-const getButtonsParent = ()=>{
-    if(!buttonsParent.value) throw new Error("Can not get buttons");
-    return buttonsParent.value;
-}
-const buttonsArray = ()=>{
-    const buttons = getButtonsParent();
-    return [...buttons.children] as HTMLButtonElement[];
-}
-const getButton = (index:number)=>{
-    const buttons = getButtonsParent();
-    return buttons.children.item(index);
-}
+const { 
+    controlsParent,
+    focus, 
+    handleArrows, 
+    blur, 
+    onFocus
+} = useTabNavigation();
 //UI Logic
-var focusedIndex = -1;
 const opened = ref(false);
 const top = ref(0);
 const left = ref(0);
@@ -98,7 +93,7 @@ function onClickAction(action:ContextAction, e:MouseEvent){
     close();
     if(action.group) {
         reopen(action.title,action.group);
-        nextTick(()=>focusAction(0))
+        nextTick(()=>focus(0))
     }
 }
 
@@ -106,33 +101,12 @@ function onClickAction(action:ContextAction, e:MouseEvent){
 function onKeydown(e:Event){
     if(!(e instanceof KeyboardEvent)) return;
     if(opened.value){
-        if(["ArrowDown","ArrowRight"].includes(e.key)) focusNext()
-        else if(["ArrowUp","ArrowLeft"].includes(e.key)) focusPrev()
-        else if(e.key == "Escape") close()
-        else return;
+        if(!handleArrows(e))
+            if(e.key == "Escape") close()
+            else return;
         e.preventDefault();
     }
     handleShortcuts(e);
-}
-function onFocus(index:number){
-    focusedIndex = index;
-}
-function focusPrev(){
-    const buttons = buttonsArray();
-    const prevButton = buttons[focusedIndex-1];
-    if(!prevButton) return buttons[buttons.length-1]?.focus();
-    return prevButton.focus();
-}
-function focusNext(){
-    const buttons = buttonsArray();
-    const nextButton = buttons[focusedIndex+1];
-    if(!nextButton) return buttons[0]?.focus();
-    return nextButton.focus();
-}
-function focusAction(index:number){
-    const buttons = buttonsArray();
-    if(!buttons[index]) return buttons[0]?.focus();
-    return buttons[index].focus();
 }
 function handleShortcuts(e:KeyboardEvent){
     const checkShortcut = (shortcut:string)=>{
@@ -146,25 +120,12 @@ function handleShortcuts(e:KeyboardEvent){
     }
     for(const shortcut of props.shortcuts){
         if(checkShortcut(shortcut)) {
-            // e.preventDefault();
-            // emit('shortcut',shortcut, e);
             open(e);
             return;
         }
     }
 }
 function onContextmenu(e:Event){
-    // const space = (e.currentTarget as HTMLElement);
-    // const popupRect = popup.value?.getBoundingClientRect();
-    // const maxX = space.clientWidth-(popupRect?.width??0);
-    // const maxY = space.clientHeight-(popupRect?.height??0);
-    // if(e instanceof PointerEvent){
-    //     // const fields = ["title","group"];
-    //     const ctxMenuData = findGroupAttribute(e.target as HTMLElement,"ctxmenu","title","group");
-    //     if(ctxMenuData.ctxmenu == "system") return;
-    //     e.preventDefault();
-    //     openAt([Math.min(e.x,maxX),Math.min(e.y,maxY)], ctxMenuData.group ?? ctxMenuData.ctxmenu,ctxMenuData.title);
-    // }
     if(e instanceof PointerEvent) open(e);
 }
 /**
@@ -198,11 +159,6 @@ function open(e:KeyboardEvent | PointerEvent){
     const maxX = spaceSize.width-(popupRect?.width??0);
     const maxY = spaceSize.height-(popupRect?.height??0);
     const { element, attributesData, data } = updateContext(e.target as HTMLElement);
-    // const { element, data } = findGroupAttribute(e.target as HTMLElement,attributePrefix,"title","group", "data");
-    // context.data = data.data;
-    // if(element && elementProperty in element) 
-    //     context.data = element[elementProperty];
-    // context.target = element ?? null;
     if(attributesData.ctxmenu == "system") return;
     e.preventDefault();
     const position = e instanceof PointerEvent?{ x:e.x, y:e.y }:{ x:mouseX.value,y:mouseY.value }
@@ -228,7 +184,7 @@ function close(){
     opened.value = false;
     innerTitle.value = props.title;
     group.value = "default";
-    focusedIndex = -1;
+    blur()
 }
 function reopen(title = innerTitle.value, groupName = group.value){
     innerTitle.value = title;
@@ -237,82 +193,28 @@ function reopen(title = innerTitle.value, groupName = group.value){
 defineExpose({
     openAt: openAt,
     close,
-    reopen,
-    getHTMLButton:getButton,
-    getHTMLButtons:buttonsArray
+    reopen
 })
 </script>
 
 <style lang="scss">
+@import '../../../theme/float-panel.scss';
 .context-menu{
+    @extend .float-panel;
     &:not(.opened){
         visibility: hidden;
         pointer-events: none;
         user-select: none;
     }
-    border-radius: 8px;
-    background: rgb(0 0 0 / 46%);
     position: fixed;
     z-index: 99999999;
-    border: 1px solid #3b3b3b8c;
-    backdrop-filter: blur(3px);
-    box-shadow: 1px 1px 9px -2px black;
     &>.title{
         padding: 5px;
         text-align: center;
         user-select: none;
     }
-    &>.context-actions{
+    .button{
         padding: 5px;
-    }
-    .context-actions>div{
-        display: flex;
-        align-items: center;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-        padding: 3px 8px;
-        color: darkslategray;
-        &:hover{
-            background: #90BFE4;
-        }
-    }
-    button{
-        // padding: 0px 5px;
-        user-select: none;
-        padding: 2px 0px;
-        &:first-child{ padding-top: 0; }
-        &:last-child{ padding-bottom: 0; }
-        &>.content{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 6px;
-            border-radius: 4px;
-        }
-        .arrow{
-            width: 5px;
-            height: 5px;
-            border: 2px solid;
-            border-left: none;
-            border-bottom: none;
-            transform: rotate(45deg);
-        }
-        &:focus{
-            .content{
-                background: #269fff;
-            }
-        }
-        outline: none;
-        width: 100%;
-        // background: #0000006e;
-        // border: 1px solid #00000080;
-        // border-radius: 4px;
-        background: transparent;
-        border: none;
-        color: white;
-        &:not(:disabled){ cursor: pointer; }
     }
 }
 </style>

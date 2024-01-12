@@ -1,65 +1,99 @@
 <!-- eslint-disable vue/no-mutating-props -->
 <template>
     <div class="text-property">
-        <span>{{ property.title }}: </span>
-        <AutosizeInput ref="input" v-if="editing"
+        <span :title="property.title">{{ property.title }}</span>
+        <ModalDialog ref="dialog" :escape="false" @escape="onModalEscape" @close="onModalClose">
+            <div class="text-property-dialog">
+                <div class="title" text-stroke>{{ property.title }}</div>
+                <textarea style="width: 600px; height: 350px;" ref="textarea"
+                    ctxmenu="system"
+                    v-model="newValue">
+                </textarea>
+            </div>
+            <TabNavigator style="display: flex;" #default="{ buttonAttrs }">
+                <button v-bind="buttonAttrs(0)" @click="modalApply">Применить</button>
+                <button v-bind="buttonAttrs(1)" @click="modalCancel">Отмена</button>
+            </TabNavigator>
+        </ModalDialog>
+        <div ref="text" class="text"
             ctxmenu="system"
-            v-model="property.text" 
-            @blur="onInputBlur" 
-            @keydown.enter="editing = false" />
-        <div class="text" v-else
-            ctxmenu="system"
-            @dblclick="onDoubleClick">
+            :title="property.text">
             <span v-if="property.text" >{{ property.text }}</span>
             <span class="placeholder" v-else-if="property.placeholder">{{ property.placeholder }}</span>
         </div>
+        <EditButton @click="openModal"/>
         <!-- <slot name="socket" :socket="property.socket"></slot> -->
     </div>
 </template>
 <script setup lang="ts">
 import { nextTick, ref } from 'vue';
 import TextProperty from './TextProperty';
-import AutosizeInput from '../../ui/AutosizeInput.vue';
-defineProps<{
+import ModalDialog from '../../ui/modal-dialog.vue';
+import TabNavigator from '../../TabNavigator/TabNavigator.vue';
+import EditButton from '../../ui/EditButton.vue';
+// import AutosizeInput from '../../ui/AutosizeInput.vue';
+const props = defineProps<{
     property:TextProperty
 }>();
+const newValue = ref(props.property.text);
 const editing = ref(false);
-const input = ref<InstanceType<typeof AutosizeInput>>();
-function onDoubleClick(){
-    editing.value = true;
-    nextTick(()=>input.value?.$el.focus())
+const dialog = ref<InstanceType<typeof ModalDialog>>();
+const textarea = ref<HTMLTextAreaElement>();
+function modalApply(){
+    props.property.setText(newValue.value);
+    dialog.value?.toggle(false);
 }
-function onInputBlur(){
-    editing.value = false;
+function modalCancel(){
+    dialog.value?.toggle(false);
+}
+function openModal(){
+    dialog.value?.toggle(true);
+    nextTick(()=>{
+        textarea.value?.focus({ preventScroll:true });
+    })
+}
+function onModalEscape(){
+    if(props.property.text == newValue.value || confirm("Отменить изменения?"))
+    dialog.value?.toggle(false);
+}
+function onModalClose(){
+    newValue.value = props.property.text;
 }
 </script>
 <style lang="scss">
 .text-property{
-    &>input{
+    &.selected{
+        box-shadow: 0px 0px 0px 2px green;
+    }
+    display: flex;
+    gap: 5px;
+    &>.title{
         color: white;
-        font-size: unset;
-        outline: none;
-        border-bottom: 2px solid #0e96ff;
     }
     &>.text{
+        background-color: #414141;
+        color: white;
         cursor: text;
         user-select: text;
         border: 1px solid transparent;
-        overflow-wrap: break-word;
-        white-space: pre-wrap;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
         display: inline-block;
-        min-height: 1em;
         padding: 2px 8px;
+        border-radius: 4px;
+        max-width: 150px;
         &>.placeholder{
             filter: contrast(0.1);
         }
     }
-    &>input,&>.text{
-        max-width: 150px;
-        padding: 2px 8px;
-        border-radius: 4px;
-        background-color: #414141;
+}
+.text-property-dialog{
+    padding: 10px;
+    .title{
         color: white;
+        padding-bottom: 10px;
+        font-size: larger;
     }
 }
 </style> 

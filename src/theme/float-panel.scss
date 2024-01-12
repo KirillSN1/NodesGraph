@@ -1,0 +1,9 @@
+@import './colors.scss';
+.float-panel{
+    border-radius: 8px;
+    background: $floatPanelBackgroud;
+    border: 1px solid #3b3b3b8c;
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    box-shadow: 1px 1px 9px -2px black;
+}

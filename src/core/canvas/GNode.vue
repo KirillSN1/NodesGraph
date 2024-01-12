@@ -1,9 +1,10 @@
 <template>
-	<div ref="elRef" class="gnode" :class="{grabbing}" :style="styles"
+	<div ref="elRef" class="gnode" :class="{ grabbing, selected:node.selected }" :style="styles"
 		v-ctxmenu:group="'node'"
 		v-ctxmenu:title="node.title"
 		v-ctxmenu:data="node"
-		@mousedown.left="onMousedown">
+		@mousedown.left="onMousedown"
+		@mousedown="node.select()">
 		<div class="gnode-title">{{ node.title }}</div>
 		<div class="gnode-properties">
 			<div :class="PROPERTY_CLASS" v-for="prop, index in node.properties" :key="index">
@@ -56,16 +57,20 @@ const getCanvasState = ()=>{
 	return canvasState;
 }
 //Props
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	node:GraphNode
-	transform?:Transform
-}>();
+	transform?:Transform,
+	outlineColor:string
+}>(),{
+	outlineColor:"rgb(0, 8, 255)"
+});
 watch(()=>props.node,console.log);
 const styles = computed(()=>{
 	const transform = props.node.transform;
 	return {
 		top:transform.position.y+'px',
 		left:transform.position.x+'px',
+		'--outline-color':props.outlineColor
 	}
 });
 //Emits
@@ -189,6 +194,10 @@ function getActualSocketTransformWith(socket:InstanceType<typeof GSocket>,data?:
 	&>*:last-child{
 		border-bottom-left-radius: inherit;
 		border-bottom-right-radius: inherit;
+	}
+	&.selected{
+		// box-shadow: 0px 0px 0px 2px rgb(0, 8, 255);
+		outline: 2px solid var(--outline-color);
 	}
 	&>.gnode-title{
 		background: #4b4b4b;

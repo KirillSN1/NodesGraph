@@ -5,15 +5,21 @@ import { PropertyWithSocket } from "./PropertyWithSocket";
 export default class GraphRef extends VirtualRef<PropertyWithSocket, PropertyWithSocket>{
     override readonly from: PropertyWithSocket;
     override readonly to: PropertyWithSocket;
-    public target:Vector2 = new Vector2();
+    // public target:Vector2 = new Vector2();
     constructor(from:PropertyWithSocket, to:PropertyWithSocket, data?:{ target?:Vector2 }){
         if(from == to) throw new Error("Can not link self!");
         if(from.type == to.type) throw new Error("Can not link properties with same types!");
         super();
         this.from = from;
         this.to = to;
-        this.target = data?.target ?? new Vector2();
+        // this.target = data?.target ?? new Vector2();
     }
+    /**
+     * TODO:
+     */
+    // isValid(){
+    //     return this.from.socket.canAttach() && this.to.socket
+    // }
     match(ref:GraphRef):boolean;
     match(from?:PropertyWithSocket,to?:PropertyWithSocket):boolean;
     match(refOrProp?:PropertyWithSocket | GraphRef,to?:PropertyWithSocket):boolean{

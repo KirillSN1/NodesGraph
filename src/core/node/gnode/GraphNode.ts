@@ -11,8 +11,14 @@ export class NodeDriver{
         this.graphDriver = driver;
         this.node = node;
     }
+    get selected(){
+        return this.graphDriver.selected == this.node;
+    }
     select(){
         this.graphDriver.select(this.node);
+    }
+    deselect(){
+        this.graphDriver.deselect();
     }
     /** Removes node from {@link GraphDriver} and calls {@link detachDriver} */
     delete(){
@@ -35,6 +41,9 @@ export default abstract class GraphNode extends VirtualNode{
     getPropertiesOfType(...types:PropertyType[]): PropertyWithSocket[]{
         return this._properties.filter(p=>p instanceof PropertyWithSocket && types.includes(p.type)) as PropertyWithSocket[];
     }
+
+    get selected(){ return this._driver?.selected }
+    
     constructor(data?:{ properties?:GraphProperty[], transform?:Transform }){
         super();
         this.setProperties(data?.properties ?? this._properties);
@@ -49,6 +58,11 @@ export default abstract class GraphNode extends VirtualNode{
     select(){
         if(!this._driver) return false;
             this._driver.select();
+        return true;
+    }
+    deselect(){
+        if(!this._driver) return false;
+            this._driver.deselect();
         return true;
     }
     /** Removes node from {@link GraphDriver} and calls {@link detachDriver} */

@@ -75,7 +75,6 @@ function attachCanvas(){
     width: 100%;
     height: 100%;
     display: block;
-    z-index: 1000;
     pointer-events: none;
   }
   .nodes-canvas{
