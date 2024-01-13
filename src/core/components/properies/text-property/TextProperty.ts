@@ -1,10 +1,8 @@
-import { PropertyType } from "@/core/node/gnode/PropertyWithSocket";
 import TextPropertyVue from "./TextProperty.vue";
 import { GraphSocket, PropertyWithSocket } from "@/core/node";
 
-export default class TextProperty extends PropertyWithSocket{
-    type: PropertyType = PropertyType.OutputProperty;
-    // title?: string = "Text";
+export default class TextProperty extends PropertyWithSocket<string>{
+    get value() { return this.text; }
     public socket: GraphSocket = GraphSocket.output({ color:"green" });
     public text:string;
     public placeholder:string;

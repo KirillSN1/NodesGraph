@@ -45,4 +45,4 @@ export class GRefChange extends GRefEvent {
         this.target = data.traget;
     }
 }
-export type BasePropertyComponent = Component<{ property:GraphProperty }>;
+export type PropertyBaseComponent = Component<{ property:GraphProperty }>;

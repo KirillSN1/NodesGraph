@@ -8,8 +8,7 @@
                     new ContextAction('Фразу',()=>add(new PhrazeNode()),'global:add'),
                     new ContextAction('Текст',()=>add(new TextNode()),'global:add'),
                     new ContextAction('Тест',()=>add(new TextNode()),'global:add'),
-                    new ContextAction('Input',()=>add(new OutputNode({ properties:[new TestOutputProperty('text')] })),'global:add'),
-                    new ContextAction('Output',()=>add(new OutputNode({ properties:[new TestInputProperty('text')] })),'global:add'),
+                    new ContextAction('Output',()=>add(new JsonOutputNode()),'global:add'),
                 ContextAction.group('node'),
                     new ContextAction<GraphNode>('Удалить',e=>e.data.delete(),'node')
             ]">
@@ -27,10 +26,8 @@ import ContextMenu from './context-menu/context-menu.vue'
 import { reactive, ref } from "vue";
 import ContextAction from "./context-menu/ContextAction";
 import Vector2 from "../vector/Vector2";
-import OutputNode from "../nodes/OutputNode";
-import TestOutputProperty from "./properies/test-property/TestOutputProperty";
-import TestInputProperty from "./properies/test-property/TestInputProperty";
 import useMousePosition from "./mouse-scope/useMousePosition";
+import JsonOutputNode from "../nodes/JsonOutputNode";
 
 const ctxMenu = ref<InstanceType<typeof ContextMenu>>();
 const el = ref<Element>();
@@ -54,4 +51,4 @@ function add(node:GraphNode){
 .graph-space{
     height: 100%;
 }
-</style>
+</style>../nodes/JsonOutputNode../nodes/JsonOutput/JsonOutputNode../nodes/JsonOutputNode../nodes/JsonOutputNode

@@ -5,8 +5,12 @@ import { PropertyType, PropertyWithSocket } from "./PropertyWithSocket";
 import GraphDriver from "@/core/canvas/types/GraphDriver";
 
 export class NodeDriver{
-    private readonly node:GraphNode;
+    readonly node:GraphNode;
     private readonly graphDriver:GraphDriver;
+    /**
+     * Node z-index
+     */
+    public zIndex = 0;
     constructor(node:GraphNode, driver:GraphDriver){
         this.graphDriver = driver;
         this.node = node;
@@ -31,7 +35,7 @@ export default abstract class GraphNode extends VirtualNode{
     abstract readonly title:string;
     private _properties:GraphProperty[] = [];
     private _driver?:NodeDriver
-
+    get zIndex(){ return this._driver?.zIndex }
     get properties():GraphProperty[] {
         return this._properties.slice();
     }
@@ -49,8 +53,12 @@ export default abstract class GraphNode extends VirtualNode{
         this.setProperties(data?.properties ?? this._properties);
         this.transform = data?.transform ?? this.transform;
     }
+    /**
+     * Attaches {@link GraphDriver} to {@link GraphNode}
+     */
     attachDriver(driver:GraphDriver){
-        this._driver = new NodeDriver(this, driver);
+        if(this._driver) throw new Error("Driver already has been attached!");
+        return this._driver = new NodeDriver(this, driver);
     }
     detachDriver(){
         this._driver = undefined;
@@ -100,4 +108,13 @@ export default abstract class GraphNode extends VirtualNode{
         if(index>=0) this._properties.splice(index,1);
         if(property.node == this) property.detach();
     }
+}
+export abstract class OutputNode<T = unknown> extends GraphNode{
+    constructor(data?:{ properties?:GraphProperty[], transform?:Transform }){
+        const isOutput = (prop:GraphProperty)=>prop instanceof PropertyWithSocket && prop.type == PropertyType.OutputProperty;
+        const outputProperty = data?.properties?.find(isOutput);
+        if(outputProperty) throw new Error(`Can not attach ${PropertyType.OutputProperty} "${outputProperty.title}" to ${OutputNode.name}.`)
+        super(data);
+    }
+    abstract calculate():T;
 }

@@ -1,4 +1,4 @@
-import GraphNode from "../../node/gnode/GraphNode";
+import GraphNode, { NodeDriver } from "../../node/gnode/GraphNode";
 import { PropertyWithSocket } from "../../node/gnode/PropertyWithSocket";
 import Vector2 from "../../vector/Vector2";
 import { GNodeTransformChange, GRefChange, GRefCreate } from "./GNodeTypes";
@@ -18,61 +18,81 @@ type LinkContext = { property:PropertyWithSocket, target:Vector2, magnet?:Vector
 type GNodeEventsMap = { [K in keyof HTMLElementEventMap]:(node:GraphNode,ev:HTMLElementEventMap[K])=>unknown }
 export default class GraphDriver {
     private readonly _drawer:GraphDrawer = new GraphDrawer();
-    private _nodes:GraphNode[] = this.getObservableNodes([]);
+    private _nodeDrivers:NodeDriver[] = this.getObservableDrivers();
     private _linkContext?:LinkContext;
-    private _selected?:GraphNode
-    public get selected(){ return this._selected }
+    private _selected?:NodeDriver;
+    public get selected(){ return this._selected?.node }
     public readonly nodeEventHandlers:GNodeEventsMap = {} as GNodeEventsMap
-    /** Observable array of nodes. Driver redraws canvas when nodes changes. */
-    public get nodes() {
-        return this._nodes;
-    }
-    public set nodes(value) {
-        this._drawer.redraw();
-        this._nodes = this.getObservableNodes(value);
+    get nodes(){
+        return this._nodeDrivers.map(driver=>driver.node);
     }
     constructor(nodes?:GraphNode[]){
         if(nodes) this.add(...nodes);
+        this.resetOrder();
     }
-    private getObservableNodes(nodes:GraphNode[]){
-        return getObservableArray(nodes,()=>{
+    private getObservableDrivers<T>(){
+        return getObservableArray(new Array<T>(),()=>{
             if(this._drawer.attached) this._drawer.redraw();
         })
+    }
+    resetOrder(){
+        const drivers = [...this._nodeDrivers];
+        for(let i = 0; i<drivers.length; i++){
+            drivers[i].zIndex = i;
+        }
     }
     attach(canvas:HTMLCanvasElement){
         this._drawer.attach(canvas);
         this._drawer.onRedraw = ()=>{
             this.onStateChange();
-            this._nodes.forEach(node=>this._drawer.drawTreeLinks(node));
+            this._nodeDrivers.forEach(driver=>this._drawer.drawTreeLinks(driver.node));
             if(this._linkContext)
                 this._drawer.drawLink(this._linkContext.property, this._linkContext.magnet ?? this._linkContext.target);
         }
-        if(this._nodes) this._drawer.redraw();
+        if(this._nodeDrivers) this._drawer.redraw();
     }
     detach(){
         this._drawer.onRedraw = undefined;
         this._drawer.detach();
     }
     select(node:GraphNode){
-        this._selected = node;
+        if(this._selected?.node == node) return;
+        this._selected = this._nodeDrivers.find(driver=>driver.node == node);
+        if(!this._selected) throw new Error("Can not select external node!");
+        const oldIndex = this._selected.zIndex;
+        this._selected.zIndex = this._nodeDrivers.length-1;//sets max index
+        for(const driver of this._nodeDrivers)
+            if(driver!=this._selected && driver.zIndex>oldIndex) driver.zIndex--;
     }
     deselect(){
         this._selected = undefined;
     }
-    add<T extends GraphNode>(...nodes:T[]){
-        return this.insert(this._nodes.length-1,...nodes);
+    findIndex(predicate: (value: GraphNode, index: number, obj:typeof this)=>unknown){
+        return this._nodeDrivers.findIndex((driver,index)=>predicate(driver.node,index, this));
     }
-    insert<T extends GraphNode>(after:number = this._nodes.length-1,...nodes:T[]){
-        nodes.forEach(node=>node.attachDriver(this));
-        return this._nodes.splice(after,0,...nodes);
+    indexOf(node:GraphNode){
+        return this._nodeDrivers.findIndex(driver=>driver.node == node)
+    }
+    add<T extends GraphNode>(...nodes:T[]){
+        return this.insert(this._nodeDrivers.length-1,...nodes);
+    }
+    insert<T extends GraphNode>(after:number = this._nodeDrivers.length-1,...nodes:T[]){
+        const drivers = nodes.map((node,index)=>{
+            const driver = node.attachDriver(this);
+            driver.zIndex = this._nodeDrivers.length+index;
+            return driver;
+        });
+        return this._nodeDrivers.splice(after,0,...drivers);
     }
     remove<T extends GraphNode>(node:T){
-        return this.removeAt(this._nodes.indexOf(node),1);
+        return this.removeAt(this.indexOf(node), 1);
     }
     removeAt(start: number, deleteCount = 0){
         for(let i = start; i<start+deleteCount; i++)
-            this._nodes[i].delete();
-        return this._nodes.splice(start,deleteCount);
+            this._nodeDrivers[i].delete();
+        const deleted = this._nodeDrivers.splice(start,deleteCount);
+        if(this._selected && deleted.indexOf(this._selected)>=0)
+            this._selected = undefined;
     }
     onStateChange:()=>void = ()=>null;
     onNodeContextMenu:(node:GraphNode, event:MouseEvent)=>void = ()=>null;

@@ -4,7 +4,7 @@
 		v-ctxmenu:title="node.title"
 		v-ctxmenu:data="node"
 		@mousedown.left="onMousedown"
-		@mousedown="node.select()">
+		@mousedown="select">
 		<div class="gnode-title">{{ node.title }}</div>
 		<div class="gnode-properties">
 			<div :class="PROPERTY_CLASS" v-for="prop, index in node.properties" :key="index">
@@ -72,7 +72,8 @@ const styles = computed(()=>{
 	return {
 		top:transform.position.y+'px',
 		left:transform.position.x+'px',
-		'--outline-color':props.outlineColor
+		'--outline-color':props.outlineColor,
+		'z-index':props.node.zIndex
 	}
 });
 //Emits
@@ -84,7 +85,8 @@ const emit = defineEmits<{
 	'end-link':[PropertyWithSocket],
 	'link':[PropertyWithSocket],
 	'magnetize':[PropertyWithSocket],
-	'unmagnetize':[PropertyWithSocket]
+	'unmagnetize':[PropertyWithSocket],
+	'select':[]
 }>();
 let resizeObserver:ResizeObserver;
 const { onMousedown, onMousemove, onMouseup, grabbing } = useGrabbing({
@@ -179,6 +181,10 @@ function getActualSocketTransformWith(socket:InstanceType<typeof GSocket>,data?:
 		rect:data?.rect == undefined?rect:rect.add(actualNodeTransform.rect,data.rect.negative())
 	})
 }
+function select(){
+	props.node.select();
+	emit("select");
+}
 </script>
 <style scoped lang="scss">
 .gnode{
@@ -235,4 +241,4 @@ function getActualSocketTransformWith(socket:InstanceType<typeof GSocket>,data?:
 		user-select: none;
 	}
 }
-</style>./types/CanvasStateKey./types/GNodeTypes
+</style>

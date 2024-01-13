@@ -22,7 +22,7 @@
             <span class="placeholder" v-else-if="property.placeholder">{{ property.placeholder }}</span>
         </div>
         <EditButton @click="openModal"/>
-        <!-- <slot name="socket" :socket="property.socket"></slot> -->
+        <slot name="socket" :socket="property.socket"></slot>
     </div>
 </template>
 <script setup lang="ts">

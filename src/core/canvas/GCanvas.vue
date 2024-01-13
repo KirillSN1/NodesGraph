@@ -20,7 +20,7 @@
   </VScrim>
 </template>
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, reactive, ref, watch } from 'vue';
+import { onMounted, onUnmounted, provide, ref, watch } from 'vue';
 import GNode from './GNode.vue';
 import VScrim from './VScrim.vue';
 import Position from '../transform/Position';
@@ -44,9 +44,6 @@ provide(CanvasStateKey,{
     return new Position({ x:canvasHtmlRect.x, y:canvasHtmlRect.y });
   }
 });
-const rd = reactive(props);
-// watch(()=>rd.driver,console.log);
-// watch(()=>rd.driver,console.log,{deep:true });
 const getEventsHandlers = (node:GraphNode)=>
   MapObject(props.driver.nodeEventHandlers, 
     ([key,listener])=>[
@@ -88,4 +85,4 @@ function attachCanvas(){
     left: 0;
   }
 }
-</style>./GraphDrawer./types/CanvasStateKey./types/GNodeTypes./types/GraphDrawer./types/GraphDriver
+</style>

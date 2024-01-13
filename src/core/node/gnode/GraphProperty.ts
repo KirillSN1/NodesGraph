@@ -1,7 +1,7 @@
 import GraphNode from "./GraphNode";
 
 import { markRaw, type Raw } from "vue";
-import type { BasePropertyComponent } from "../../canvas/types/GNodeTypes"
+import type { PropertyBaseComponent } from "../../canvas/types/GNodeTypes"
 
 export default class GraphProperty{
     /**
@@ -16,9 +16,9 @@ export default class GraphProperty{
     /**
      * Vue component, that uses for drawing this property
      */
-    public readonly component:Raw<BasePropertyComponent>;
+    public readonly component:Raw<PropertyBaseComponent>;
 
-    constructor(component: BasePropertyComponent){
+    constructor(component: PropertyBaseComponent){
         this.component = markRaw(component);
     }
     /**

@@ -198,7 +198,7 @@ defineExpose({
 </script>
 
 <style lang="scss">
-@import '../../../theme/float-panel.scss';
+@import '../../../assets/styles/theme/float-panel.scss';
 .context-menu{
     @extend .float-panel;
     &:not(.opened){

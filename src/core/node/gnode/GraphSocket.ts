@@ -11,9 +11,9 @@ export class GraphSocket extends VirtualNode{
     private _refs:GraphRef[] = [];
     get refs():GraphRef[] { return [...this._refs] }
 
-    constructor({ style = new DefaultSocketStyle(), type }: { style:GraphSocketStyle, type:SocketType }){
+    constructor({ style, type }: { style?:GraphSocketStyle, type:SocketType }){
         super();
-        this.style = style;
+        this.style = style ?? new DefaultSocketStyle();
         this.type = type;
     }
     static input(style:GraphSocketStyle = new DefaultSocketStyle()){
@@ -90,17 +90,3 @@ export default class SocketRefsLimitError extends Error{
         super(`This ${type} has refs limit - ${limit}`);
     }
 }
-// export class OutputSocket extends GraphSocket{
-//     readonly style: GraphSocketStyle;
-//     constructor(data:{ style:GraphSocketStyle } = { style:new DefaultSocketStyle()}){
-//         super();
-//         this.style = data.style;
-//     }
-// }
-// export class InputSocket extends GraphSocket{
-//     readonly style: GraphSocketStyle;
-//     constructor(data:{ style:GraphSocketStyle } = { style:new DefaultSocketStyle()}){
-//         super();
-//         this.style = data.style;
-//     }
-// }

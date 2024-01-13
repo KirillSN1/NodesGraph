@@ -48,7 +48,7 @@ defineExpose({
 });
 </script>
 <style scoped lang="scss">
-@import '../../../theme/float-panel.scss';
+@import '../../../assets/styles/theme/float-panel.scss';
 .modal{
     &>.content{
         @extend .float-panel;
