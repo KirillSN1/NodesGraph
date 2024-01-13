@@ -47,6 +47,7 @@ function add(node:GraphNode){
     const position = new Vector2({ x:mouseX.value, y:mouseY.value }).add(localOffset.negative()).add(offset);
     node.transform.position = position;
     driver.add(reactive(node) as GraphNode);
+    node.select();
     // driver.nodes.push();
 }
 // const removeNode:CtxActionHandler<GraphNode> = (ev)=>{
