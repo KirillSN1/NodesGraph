@@ -11,6 +11,8 @@
           @move-link="driver.onMoveLink"
           @end-link="driver.onEndLink"
           @link="driver.onLink"
+          @magnetize="driver.onMagnetize"
+          @unmagnetize="driver.onUnmagnetize"
           @context.prevent="driver.onNodeContextMenu">
         </GNode>
       </div>
@@ -28,6 +30,12 @@ import GraphNode from '../node/gnode/GraphNode';
 import MapObject from '../utils/MapObject'
 
 const canvas = ref<HTMLCanvasElement>();
+const nodesCanvas = ref<HTMLDivElement>();
+const props = withDefaults(defineProps<{
+  driver?:GraphDriver,
+}>(),{
+  driver: ()=>new GraphDriver(),
+});
 provide(CanvasStateKey,{
   canvas,
   getCanvasPosition(){
@@ -35,12 +43,6 @@ provide(CanvasStateKey,{
     const canvasHtmlRect = canvas.value.getBoundingClientRect();
     return new Position({ x:canvasHtmlRect.x, y:canvasHtmlRect.y });
   }
-});
-const nodesCanvas = ref<HTMLDivElement>();
-const props = withDefaults(defineProps<{
-  driver?:GraphDriver,
-}>(),{
-  driver: ()=>new GraphDriver(),
 });
 const rd = reactive(props);
 // watch(()=>rd.driver,console.log);
@@ -67,7 +69,7 @@ function attachCanvas(){
 <style lang="scss" scoped>
 .gcanvas{
   position: relative;
-  height: 100vh;
+  height: 100%;
   &>canvas{
     position: absolute;
     top: 0;
@@ -78,7 +80,7 @@ function attachCanvas(){
     pointer-events: none;
   }
   .nodes-canvas{
-    overflow: auto;
+    overflow: hidden;
     position: absolute;
     width: 100%;
     height: 100%;

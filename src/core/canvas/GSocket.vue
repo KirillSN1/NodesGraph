@@ -1,12 +1,12 @@
 <template>
     <div ref="el"
-        class="socket" 
+        class="socket-magnet"
         :class="socket.type"
         :style="{ '--socket-color':socket.style.color }"
         @mousedown.left="grabbing.onMousedown"
         @mouseenter="onMouseenter"
-        @mouseleave="onMouseleave"
-        @mouseup="onMouseup">
+        @mouseleave="onMouseleave">
+        <div class="socket"></div>
     </div>
 </template>
 <script setup lang="ts">
@@ -22,7 +22,9 @@ const emit = defineEmits<{
     'start-link':[GRefCreate],
     'move-link':[GRefChange],
     'end-link':[]
-    'link':[]
+    'link':[],
+    'magnetize':[],
+    'unmagnetize':[]
 }>();
 defineProps<{
     socket:GraphSocket
@@ -64,13 +66,12 @@ onUnmounted(()=>{
 })
 function onMouseenter(e:MouseEvent){
     if(e.buttons != 1) return;
-    e.target?.addEventListener("mouseup",()=>emit("link"));
+    emit("magnetize");
+    e.target?.addEventListener("mouseup",()=>emit("link"),{ once:true });
 }
 function onMouseleave(e:MouseEvent){
-    console.log("leave",e);
-}
-function onMouseup(e:MouseEvent){
-    console.log("up",e);
+    if(e.buttons != 1) return;
+    emit("unmagnetize");
 }
 defineExpose({
     getRect(){
@@ -80,21 +81,18 @@ defineExpose({
 });
 </script>
 <style scoped lang="scss">
-.socket{
-    width: 8px;
-    height: 8px;
-    border-radius: 4px;
-    background: white;
-    --socket-width: 4px;
+.socket-magnet{
+    --socket-radius: 4px;
+    --magnet-padding:5px;
     --socket-shadow: 0px 0px 2px 0px black;
-    --socket-inset-shadow: inset 0px 0px 2px var(--socket-width) var(--socket-color);
-    box-shadow: inset 0px 0px 0px var(--socket-width) var(--socket-color), var(--socket-inset-shadow), var(--socket-shadow);
+    --socket-inset-shadow: inset 0px 0px 2px var(--socket-radius) var(--socket-color);
+    width: max-content;
+    height: max-content;
+    padding: var(--magnet-padding);
     position: absolute;
     top: 50%;
     transform-origin: top left;
     transform: translate(-50%,-50%);
-    transition: 0.15s cubic-bezier(0.075, 0.82, 0.165, 1);
-    transition-property: scale, --socket-width;
     &.InputSocket{
         left: 0%;
     }
@@ -104,8 +102,18 @@ defineExpose({
     &.input,&.output{
         &:hover{
             scale: 1.5;
-            --socket-width: 2px;
+            --socket-radius: 2px;
         }
     }
+    .socket{
+        width: calc(var(--socket-radius) * 2);
+        height: calc(var(--socket-radius) * 2);
+        border-radius: var(--socket-radius);
+        border-radius: calc(var(--socket-radius) + var(--magnet-padding));
+        background: white;
+        box-shadow: inset 0px 0px 0px var(--socket-radius) var(--socket-color), var(--socket-inset-shadow), var(--socket-shadow);
+        transition: 0.15s cubic-bezier(0.075, 0.82, 0.165, 1);
+        transition-property: scale, --socket-radius;
+    }
 }
-</style>./types/CanvasStateKey./types/GNodeTypes
+</style>

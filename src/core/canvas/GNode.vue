@@ -13,10 +13,12 @@
 						<GSocket v-if="prop instanceof PropertyWithSocket && socket"
 							ref="sockets" 
 							:socket="socket" 
-							@start-link="emit('start-link',prop, $event)"
-							@move-link="emit('move-link',prop, $event)"
-							@end-link="emit('end-link',prop)"
-							@link="emit('link', prop)">
+							@start-link="emit('start-link', prop, $event)"
+							@move-link="emit('move-link', prop, $event)"
+							@end-link="emit('end-link', prop)"
+							@link="emit('link', prop)"
+							@magnetize="emit('magnetize', prop)"
+							@unmagnetize="emit('unmagnetize', prop)">
 						</GSocket>
 						<!-- компонент сокета + (добавлять z-index на клик) -->
 					</template>
@@ -77,10 +79,12 @@ const styles = computed(()=>{
 const emit = defineEmits<{
 	move:[GNodeTransformChange],
 	resize:[GNodeTransformChange],
-	'start-link':[GraphProperty, GRefCreate],
-	'move-link':[GraphProperty, GRefChange],
-	'end-link':[GraphProperty]
-	'link':[GraphProperty]
+	'start-link':[PropertyWithSocket, GRefCreate],
+	'move-link':[PropertyWithSocket, GRefChange],
+	'end-link':[PropertyWithSocket],
+	'link':[PropertyWithSocket],
+	'magnetize':[PropertyWithSocket],
+	'unmagnetize':[PropertyWithSocket]
 }>();
 let resizeObserver:ResizeObserver;
 const { onMousedown, onMousemove, onMouseup, grabbing } = useGrabbing({

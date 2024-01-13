@@ -1,5 +1,5 @@
 <template>
-    <div ref="el">
+    <div ref="el" class="graph-space">
         <GCanvas :driver="driver"></GCanvas>
         <ContextMenu ref="ctxMenu"
             :shortcuts="['ctrl+a']"
@@ -25,7 +25,7 @@ import GraphDriver from "../canvas/types/GraphDriver";
 import PhrazeNode from "../nodes/PhrazeNode";
 import ContextMenu from './context-menu/context-menu.vue'
 import { reactive, ref } from "vue";
-import ContextAction, { CtxActionHandler } from "./context-menu/ContextAction";
+import ContextAction from "./context-menu/ContextAction";
 import Vector2 from "../vector/Vector2";
 import OutputNode from "../nodes/OutputNode";
 import TestOutputProperty from "./properies/test-property/TestOutputProperty";
@@ -48,9 +48,10 @@ function add(node:GraphNode){
     node.transform.position = position;
     driver.add(reactive(node) as GraphNode);
     node.select();
-    // driver.nodes.push();
 }
-// const removeNode:CtxActionHandler<GraphNode> = (ev)=>{
-//     ev.data.delete();
-// }
 </script>
+<style>
+.graph-space{
+    height: 100%;
+}
+</style>

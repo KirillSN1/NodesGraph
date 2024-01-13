@@ -1,10 +1,7 @@
 @import "./core/fonts/stylesheet.css";
-@import './theme/theme.scss';
+@import './assets/styles/theme/theme.scss';
+@import './assets/styles/theme/reset.scss';
+
 * {
-    // margin: 0;
-    // font-family: Avenir, Helvetica, Arial, sans-serif;
-    // -webkit-font-smoothing: antialiased;
-    // -moz-osx-font-smoothing: grayscale;
     font-family: "Roboto Mono";
-    // font-weight: 100;
 }

@@ -40,6 +40,8 @@ function onMouseup(event:MouseEvent){
 .scrim{
     position: relative;
     overflow: hidden;
+    width: 100%;
+    height: 100%;
     .platform{
         position: absolute;
         min-width: 100%;

@@ -212,6 +212,7 @@ defineExpose({
         padding: 5px;
         text-align: center;
         user-select: none;
+        color: white;
     }
     .button{
         padding: 5px;

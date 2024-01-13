@@ -1,5 +1,4 @@
 import GraphNode from "../../node/gnode/GraphNode";
-import GraphProperty from "../../node/gnode/GraphProperty";
 import { PropertyWithSocket } from "../../node/gnode/PropertyWithSocket";
 import Vector2 from "../../vector/Vector2";
 import { GNodeTransformChange, GRefChange, GRefCreate } from "./GNodeTypes";
@@ -15,11 +14,12 @@ const getObservableArray = <T>(value:T[], onChange:()=>void)=>{
         }
     });
 }
+type LinkContext = { property:PropertyWithSocket, target:Vector2, magnet?:Vector2 };
 type GNodeEventsMap = { [K in keyof HTMLElementEventMap]:(node:GraphNode,ev:HTMLElementEventMap[K])=>unknown }
 export default class GraphDriver {
     private readonly _drawer:GraphDrawer = new GraphDrawer();
     private _nodes:GraphNode[] = this.getObservableNodes([]);
-    private _linkPropertyBuffer?:{ property:PropertyWithSocket, target:Vector2 };
+    private _linkContext?:LinkContext;
     private _selected?:GraphNode
     public get selected(){ return this._selected }
     public readonly nodeEventHandlers:GNodeEventsMap = {} as GNodeEventsMap
@@ -44,8 +44,8 @@ export default class GraphDriver {
         this._drawer.onRedraw = ()=>{
             this.onStateChange();
             this._nodes.forEach(node=>this._drawer.drawTreeLinks(node));
-            if(this._linkPropertyBuffer)
-                this._drawer.drawLink(this._linkPropertyBuffer.property, this._linkPropertyBuffer.target);
+            if(this._linkContext)
+                this._drawer.drawLink(this._linkContext.property, this._linkContext.magnet ?? this._linkContext.target);
         }
         if(this._nodes) this._drawer.redraw();
     }
@@ -94,25 +94,31 @@ export default class GraphDriver {
         this._drawer.offset = e;
         console.log(e);
     }
-    onStartLink = (property:GraphProperty,e:GRefCreate)=>{
-        console.log('start',property);
-        if(property instanceof PropertyWithSocket){
-            this._linkPropertyBuffer = { property, target:e.target };
-        }
+    onStartLink = (property:PropertyWithSocket,e:GRefCreate)=>{
+        if(property instanceof PropertyWithSocket)
+            this._linkContext = { property, target:e.target };
         //this.drawer.redraw(); May not call redrow
     }
-    onMoveLink = (property:GraphProperty,e:GRefChange)=>{
-        if(!this._linkPropertyBuffer) throw new Error("linkPropertyBuffer is undefined!");
-        this._linkPropertyBuffer.target = e.target;
+    onMoveLink = (property:PropertyWithSocket,e:GRefChange)=>{
+        if(!this._linkContext) throw new Error("linkPropertyBuffer is undefined!");
+        this._linkContext.target = e.target;
         this._drawer.redraw();
     }
-    onEndLink = (property:GraphProperty)=>{
-        this._linkPropertyBuffer = undefined;
+    onMagnetize = (property:PropertyWithSocket)=>{
+        if(!this._linkContext) return;
+        this._linkContext.magnet = property.socket.transform.getCenter()
+    }
+    onUnmagnetize = (property:PropertyWithSocket)=>{
+        if(!this._linkContext) return;
+        this._linkContext.magnet = undefined;
+    }
+    onEndLink = (property:PropertyWithSocket)=>{
+        this._linkContext = undefined;
         this._drawer.redraw();
     }
-    onLink = (property:GraphProperty)=>{
+    onLink = (property:PropertyWithSocket)=>{
         if(property instanceof PropertyWithSocket && 
-            this._linkPropertyBuffer?.property.type != property.type)
-            this._linkPropertyBuffer?.property.linkTo(property);
+            this._linkContext?.property.type != property.type)
+            this._linkContext?.property.linkTo(property);
     }
 }
