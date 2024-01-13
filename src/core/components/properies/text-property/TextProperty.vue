@@ -2,7 +2,13 @@
 <template>
     <div class="text-property">
         <span :title="property.title">{{ property.title }}</span>
-        <ModalDialog ref="dialog" :escape="false" @escape="onModalEscape" @close="onModalClose">
+        <ModalDialog 
+            ref="dialog" 
+            :escape="false" 
+            @escape="onModalEscape" 
+            @close="onModalClose"
+            :style="`z-index:${(property.node?.maxZIndex??0)+1}`"
+            >
             <div class="text-property-dialog">
                 <div class="title" text-stroke>{{ property.title }}</div>
                 <textarea style="width: 600px; height: 350px;" ref="textarea"

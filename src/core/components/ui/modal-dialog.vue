@@ -1,6 +1,6 @@
 <template>
     <Teleport to="body">
-        <div class="modal" :show="value">
+        <div class="modal" :show="value" v-bind="$attrs">
             <div class="content">
                 <slot :close="()=>toggle(false)"></slot>
             </div>

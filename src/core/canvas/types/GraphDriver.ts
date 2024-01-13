@@ -26,6 +26,8 @@ export default class GraphDriver {
     get nodes(){
         return this._nodeDrivers.map(driver=>driver.node);
     }
+    /** Nodes length */
+    get length(){ return this._nodeDrivers.length }
     constructor(nodes?:GraphNode[]){
         if(nodes) this.add(...nodes);
         this.resetOrder();

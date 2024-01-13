@@ -11,6 +11,7 @@ export class NodeDriver{
      * Node z-index
      */
     public zIndex = 0;
+    public get maxZIndex(){ return this.graphDriver.length }
     constructor(node:GraphNode, driver:GraphDriver){
         this.graphDriver = driver;
         this.node = node;
@@ -35,7 +36,8 @@ export default abstract class GraphNode extends VirtualNode{
     abstract readonly title:string;
     private _properties:GraphProperty[] = [];
     private _driver?:NodeDriver
-    get zIndex(){ return this._driver?.zIndex }
+    get zIndex(){ return this._driver?.zIndex; }
+    get maxZIndex(){ return this._driver?.maxZIndex; }
     get properties():GraphProperty[] {
         return this._properties.slice();
     }
@@ -45,7 +47,6 @@ export default abstract class GraphNode extends VirtualNode{
     getPropertiesOfType(...types:PropertyType[]): PropertyWithSocket[]{
         return this._properties.filter(p=>p instanceof PropertyWithSocket && types.includes(p.type)) as PropertyWithSocket[];
     }
-
     get selected(){ return this._driver?.selected }
     
     constructor(data?:{ properties?:GraphProperty[], transform?:Transform }){
