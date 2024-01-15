@@ -17,7 +17,6 @@ import { GRefChange, GRefCreate } from './types/GNodeTypes';
 import CanvasStateKey from './types/CanvasStateKey';
 import Position from '../transform/Position';
 
-//TODO:Magnet
 const emit = defineEmits<{
     'start-link':[GRefCreate],
     'move-link':[GRefChange],
