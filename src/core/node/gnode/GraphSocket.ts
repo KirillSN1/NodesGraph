@@ -23,10 +23,27 @@ export class GraphSocket extends VirtualNode{
         return new GraphSocket({ type:SocketType.OutputSocket, style });
     }
     /**
-     * @returns true if socket can adds one more ref
+     * Checks ref is able to attach to this socket.
+     * 
+     * Note: {@link attach} attaches ref to both nodes of ref.
+     * Use {@link GraphRef.canAttach} to fully check ref to be able to attach
+     * @returns true if {@link GraphSocket} can adds spesified {@link ref}
      */
-    canAttach(){
-        return this.type != SocketType.InputSocket || !this._refs.length;
+    canAttach(ref:GraphRef){
+        return !this.isRef(ref) && this.checkRefsLimit();
+    }
+    /**
+     * Checks {@link GraphSocket} of specified {@link property} is able to attach to this socket.
+     */
+    canAttachTo(property:PropertyWithSocket){
+        return !this.isRefTo(property) && this.checkRefsLimit();
+    }
+    /**
+     * 
+     * @returns Returns false if refs count is maximum.
+     */
+    checkRefsLimit(){
+        return this.type != SocketType.InputSocket || !this._refs.length
     }
     /**
      * Adds {@link ref} to refs list.
@@ -35,6 +52,7 @@ export class GraphSocket extends VirtualNode{
      * (for {@link SocketType.InputSocket} this limit is 1). See {@link canAttach}
      */
     attach(ref: GraphRef):void {
+        console.log(ref);
         if(this.type == SocketType.InputSocket && this._refs.length) 
             throw new SocketRefsLimitError(this.type)
         this.assertRef(ref);
@@ -76,6 +94,9 @@ export class GraphSocket extends VirtualNode{
     }
     isRef(ref:GraphRef):boolean{
         return this._refs.find(r=>r.match(ref)) != null
+    }
+    isRefTo(property:PropertyWithSocket){
+        return this._refs.find(r=>property == r.from || property == r.to) != null;
     }
 }
 export class DefaultSocketStyle extends GraphSocketStyle{

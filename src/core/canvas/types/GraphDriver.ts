@@ -128,7 +128,8 @@ export default class GraphDriver {
     }
     onMagnetize = (property:PropertyWithSocket)=>{
         if(!this._linkContext) return;
-        this._linkContext.magnet = property.socket.transform.getCenter()
+        if(this._linkContext.property.canLinkWith(property))
+            this._linkContext.magnet = property.socket.transform.getCenter()
     }
     onUnmagnetize = (property:PropertyWithSocket)=>{
         if(!this._linkContext) return;

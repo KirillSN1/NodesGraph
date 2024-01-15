@@ -31,9 +31,16 @@ export abstract class PropertyWithSocket<T = unknown> extends GraphProperty{
     static output<T>(title:string, options:PropertyOptions<T>){
         return PropertyWithSocket.create<T>(title, options, SocketType.OutputSocket);
     }
+    /**
+     * Checks specified {@link property} is able to link with this property.
+     * See {@link GraphSocket.canAttachTo}
+     */
+    canLinkWith(property:PropertyWithSocket):boolean{
+        return property.socket.canAttachTo(this) && this.socket.canAttachTo(property);
+    }
     linkTo(property:PropertyWithSocket):void{
         const ref = new GraphRef(property,this,{ target:property.socket.transform.position });
-        if(!this.socket.isRef(ref)) this.socket.attach(ref);
+        if(ref.canAttach()) this.socket.attach(ref);
     }
     unlink(property?:PropertyWithSocket):void{
         if(property){
@@ -47,16 +54,3 @@ export enum PropertyType{
     InputProperty,
     OutputProperty
 }
-// export abstract class InputProperty extends PropertyWithSocket{
-//     linkTo(property:OutputProperty){
-//         const ref = new GraphRef(property,this,{ target:property.socket.transform.position });
-//         if(!this.socket.isRef(ref)) this.socket.attach(ref);
-//     }
-// }
-// export abstract class OutputProperty<T = void> extends PropertyWithSocket{
-//     abstract calculate():T;
-//     linkTo(property:InputProperty){
-//         const ref = new GraphRef(this,property,{ target:property.socket.transform.position });
-//         if(!this.socket.isRef(ref)) this.socket.attach(ref);
-//     }
-// }

@@ -1,6 +1,7 @@
 import Vector2 from "../../vector/Vector2";
 import VirtualRef from "../virtual/VirtualRef";
 import { PropertyWithSocket } from "./PropertyWithSocket";
+import { GraphSocket } from "./GraphSocket";
 
 export default class GraphRef extends VirtualRef<PropertyWithSocket, PropertyWithSocket>{
     override readonly from: PropertyWithSocket;
@@ -25,5 +26,17 @@ export default class GraphRef extends VirtualRef<PropertyWithSocket, PropertyWit
     match(refOrProp?:PropertyWithSocket | GraphRef,to?:PropertyWithSocket):boolean{
         if(refOrProp instanceof GraphRef) return (refOrProp == this) || this.match(refOrProp.from,refOrProp.to);
         return this.from == refOrProp && this.to == to;
+    }
+    tryAttach(){
+        if(!this.canAttach()) return false;
+            this.from.socket.attach(this);
+        return true;
+    }
+    /**
+     * Fully checks that {@link GraphRef} is able to attach to both sockets. see {@link GraphSocket.canAttach}
+     * @returns 
+     */
+    canAttach(){
+        return this.from.socket.canAttach(this) && this.to.socket.canAttach(this);
     }
 }
